@@ -1,0 +1,66 @@
+# A three-node Kafka cluster. Each node is both a controller (the cluster's
+# metadata, the job ZooKeeper used to do) and a broker (it stores the data).
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: dual
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: freight
+spec:
+  replicas: 3
+  roles:
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        # Each broker gets its own 10 GB disk, which survives restarts and
+        # scaling the cluster to zero. "ephemeral" would lose the log.
+        type: persistent-claim
+        size: 10Gi
+        deleteClaim: false
+        kraftMetadata: shared
+  # Small enough for three brokers on one e2-standard-4 node.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      memory: 1536Mi
+  jvmOptions:
+    "-Xms": 512m
+    "-Xmx": 768m
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: freight
+  namespace: kafka
+spec:
+  kafka:
+    version: 4.3.1
+    metadataVersion: 4.3-IV0
+    listeners:
+      # Reachable inside the cluster at freight-kafka-bootstrap.kafka:9092
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      # Every partition has 3 copies, and a write needs 2 of them to succeed.
+      default.replication.factor: 3
+      min.insync.replicas: 2
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+  entityOperator:
+    # Turns KafkaTopic resources into real topics.
+    topicOperator:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          memory: 512Mi

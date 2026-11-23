@@ -1,10 +1,12 @@
-# Shipper profiles
+# Launch customers
 
-From session 3 you build your platform for one of these seven shippers. They are the same seven shippers that appear in the generator's `bookings` data, with the same IDs, so you can filter your data by `shipper_id`.
+Your company sells one platform to many shippers. Your shipper is its launch customer: the first big contract, and its targets are what your company promised. Build the platform so it meets them.
 
-I assign the profiles in class: three students per shipper, 21 in all. You each build and defend your own design.
+From session 3 each of you has one of these seven shippers as your launch customer. They are the same seven shippers that appear in the generator's `bookings` data, with the same IDs, so you can filter your data by `shipper_id`.
 
-Every profile has three targets your platform must meet:
+I assign the launch customers in class: three students per shipper, 21 in all. You each build and defend your own design.
+
+Every launch customer has three targets your platform must meet:
 
 - **Freshness:** how far behind reality the operations view may be.
 - **Reliability:** the minimum on-time rate on each lane the shipper uses. A shipment is on time if it arrived no more than 24 hours after its scheduled arrival.

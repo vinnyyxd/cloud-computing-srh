@@ -1,5 +1,5 @@
 variable "project_id" {
-  description = "Your GCP project ID, on your own account or the course account"
+  description = "Your GCP project ID"
   type        = string
 }
 

@@ -1,4 +1,4 @@
 # Only needed for the Kafka and Pub/Sub sinks. Batch files and the stdout,
 # file and http sinks use the Python standard library only.
-kafka-python==2.0.6
+kafka-python==3.0.12
 google-cloud-pubsub==2.23.1

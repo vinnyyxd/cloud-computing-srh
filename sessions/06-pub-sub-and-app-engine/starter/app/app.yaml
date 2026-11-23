@@ -1,0 +1,11 @@
+# App Engine standard: Google runs the servers and scales them, down to zero.
+runtime: python313
+entrypoint: gunicorn -b :$PORT --workers 1 --threads 8 main:app
+
+instance_class: F1
+automatic_scaling:
+  min_instances: 0
+  max_instances: 2   # a ceiling on cost, whatever traffic arrives
+
+env_variables:
+  PUBSUB_TOPIC: air-events

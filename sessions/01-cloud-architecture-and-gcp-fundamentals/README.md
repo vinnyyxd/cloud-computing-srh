@@ -13,7 +13,7 @@ By the end of this session you can:
 - Describe how code reaches production: branch, pull request, then dev, test and production.
 - Place each service in the module on a map of a modern data platform: ingest, store, process, serve.
 
-You leave with your own Google Cloud project with a spending limit (a budget alert on your own account, or the cap on the course account), and a bucket created with Terraform that your neighbour can view.
+You leave with your own Google Cloud project with a budget alert, and a bucket created with Terraform that your neighbour can view.
 
 ## Materials
 - [Slides](slides/)

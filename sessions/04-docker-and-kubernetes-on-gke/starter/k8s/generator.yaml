@@ -1,0 +1,41 @@
+# The event generator as a Kubernetes Deployment: "keep this many copies running".
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: generator
+  labels:
+    app: generator
+spec:
+  replicas: 1
+  # The Deployment manages every pod whose labels match this selector.
+  selector:
+    matchLabels:
+      app: generator
+  template:
+    metadata:
+      labels:
+        app: generator
+    spec:
+      containers:
+        - name: generator
+          # Replace PROJECT_ID with your project ID (step 5 does it for you).
+          image: europe-west3-docker.pkg.dev/PROJECT_ID/freight/generator:v1
+          args: ["stream"]
+          env:
+            - name: SINK
+              value: stdout
+            - name: MODE
+              value: both
+            - name: RATE
+              value: "1"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false

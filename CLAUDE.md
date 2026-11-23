@@ -18,9 +18,8 @@ This is the public student repo for **Cloud Computing and Data Architectures**, 
 - 15 sessions, 16 Nov to 18 Dec 2026, 16:30-19:00, seminar room 1.4. 21 students.
 - Session shape: recap, concepts, industry context, break, workshop (about 80 min; session 1 runs 55).
 - Platform: Google Cloud, region `europe-west3`. Databricks Free Edition for session 9. Snowflake is comparison only.
-- Every student has their own GCP project: a free-trial project, or one hosted on the course billing account with a spending cap (`setup/hosted-project.md`) if the trial sign-up fails. The same Terraform deploys to any project via `project_id`. Each student keeps their own Terraform state.
-- Every workshop must work on both kinds of project. Where a step differs (sign-up, budgets, billing pages, anything needing Owner or a billing role), show both versions as bullets labelled **Own account** and **Course account**. Course-account students have Editor, Project IAM Admin and Storage Admin on their project, can enable APIs, cannot create projects or see billing, and are capped at €50 a month, so a workshop's resources must fit under that cap.
-- **The project is individual throughout.** There are no teams. In session 3 each student gets one of seven shipper profiles; three students share each profile, but each builds and defends their own design.
+- Every student has their own GCP project, on their own free-trial account. The same Terraform deploys to any project via `project_id`. Each student keeps their own Terraform state.
+- **The project is individual throughout.** There are no teams. The story: students work for a freight-analytics company that builds one platform and sells it to shippers. In session 3 each student gets a launch customer, one of seven shippers (`project/shippers.md`), whose targets shape their own version of the platform; three students share each launch customer, but each builds and defends their own design.
 
 ## Assessment
 Marking lives in project/marking.md, which is the source of truth. Checkpoints are signposts, not marked.

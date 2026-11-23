@@ -17,5 +17,5 @@ You leave with your own architecture diagram, ADR 001 and a batch delay-per-lane
 - [Slides](slides/)
 - [Workshop](workshop.md)
 - [Starter code](starter/)
-- [Shipper profiles](../../project/shippers.md)
+- [Launch customers](../../project/shippers.md)
 - [ADR template](../../project/adr-template.md)

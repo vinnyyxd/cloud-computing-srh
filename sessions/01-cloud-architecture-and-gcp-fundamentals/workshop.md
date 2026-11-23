@@ -2,18 +2,14 @@
 
 **Time:** about 55 minutes. Everyone works in their own Google Cloud project. Pair up only for step 4.
 
-Your project is either on your **own account** (the free trial) or on the **course account** (a project I host for you). See [setup/gcp.md](../../setup/gcp.md) for the difference. Steps 1 and 2 differ; from step 3 on, everyone does the same thing.
-
 ## 1. Get your project
-- **Own account:** follow [setup/gcp.md](../../setup/gcp.md). Create a project called `cc-<your-name>` and note its **project ID** (shown under the name; it may have numbers added).
-- **Course account:** I've sent you a project ID. Follow [setup/hosted-project.md](../../setup/hosted-project.md) to open the project in the console.
+Follow [setup/gcp.md](../../setup/gcp.md). Create a project called `cc-<your-name>` and note its **project ID** (shown under the name; it may have numbers added).
 
 ## 2. Set a spending limit
-- **Own account:** search **Budgets and alerts** in the console. Create a budget of €50 and keep the 50%, 90% and 100% alerts. A budget only sends emails. It does not stop anything running.
-- **Course account:** skip this. Your project already has a hard cap of €50 a month: past it, billing is switched off and everything stops.
+Search **Budgets and alerts** in the console. Create a budget of €50 and keep the 50%, 90% and 100% alerts. A budget only sends emails. It does not stop anything running.
 
 ## 3. Create a bucket with Terraform
-Open **Cloud Shell** (the `>_` icon, top right of the console). Terraform is already installed there.
+Open **Cloud Shell** (the `>_` icon, top right of the console). Do the three [Cloud Shell tips](../../setup/gcp.md#cloud-shell-tips) once before you start: the third installs Terraform.
 
 ```bash
 git clone https://github.com/sham100768/cloud-computing-srh.git
@@ -30,7 +26,7 @@ Then open the `bucket_url` it prints and check the bucket is there.
 
 ## 4. Add your neighbour in IAM
 In `main.tf`, uncomment the `neighbour_viewer` block. Run `terraform plan`, read the change, then `terraform apply`.
-Ask your neighbour to open your project in the console. They should see it, but not be able to change anything. This works across both kinds of account: your neighbour signs in with the Google account they gave you as `neighbour_email`.
+Ask your neighbour to open your project in the console. They should see it, but not be able to change anything. Your neighbour signs in with the Google account they gave you as `neighbour_email`.
 
 ## Checkpoint
 `terraform apply` works in your project, and `terraform plan` now says **No changes**.
@@ -44,8 +40,8 @@ Ask your neighbour to open your project in the console. They should see it, but 
 Nothing today bills by the hour, and an empty bucket costs nothing, so leave it: we use it on Wednesday.
 
 ## If something goes wrong
-- **Card verification fails, or the sign-up is blocked:** try another card. If it still fails, tell me and I'll give you a project on the course account: see [setup/hosted-project.md](../../setup/hosted-project.md).
+- **Card verification fails, or the sign-up is blocked:** try another card. If it still fails, tell me.
 - **`Error 403` or "API not enabled":** the error message contains a link. Open it, enable the API, wait a minute, apply again.
 - **"Bucket name not available":** names are global. Check `project_id` in `terraform.tfvars` is your own.
+- **Repo folder gone, or Terraform needs reinstalling every session:** see the [Cloud Shell tips](../../setup/gcp.md#cloud-shell-tips).
 - **Wrong project:** run `gcloud config get-value project` and compare it with your project ID.
-- **Course account: `billing is disabled`:** your project hit its cap. Tell me.

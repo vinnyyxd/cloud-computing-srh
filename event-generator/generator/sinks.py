@@ -51,20 +51,29 @@ class HttpSink:
 class KafkaSink:
     """Keyed by shipment ID, so one shipment's events stay in order on one partition."""
 
+    LOG_EVERY = 20  # events between progress lines in the log
+
     def __init__(self, bootstrap, topic):
         try:
             from kafka import KafkaProducer
+            from kafka.serializer import DefaultSerializer, JsonSerializer
         except ImportError:
             sys.exit("Kafka sink needs kafka-python: pip install -r requirements-sinks.txt")
         self.topic = topic
+        self.sent = 0
         self.producer = KafkaProducer(
             bootstrap_servers=bootstrap,
-            key_serializer=str.encode,
-            value_serializer=lambda v: json.dumps(v).encode(),
+            # Wait until every in-sync replica has the event before counting it as sent.
+            acks="all",
+            key_serializer=DefaultSerializer(),  # the shipment ID, as UTF-8
+            value_serializer=JsonSerializer(),   # the event, as JSON
         )
 
     def send(self, event):
         self.producer.send(self.topic, key=event["shipment_id"], value=event)
+        self.sent += 1
+        if self.sent % self.LOG_EVERY == 0:
+            print(f"kafka sink: {self.sent} events sent to {self.topic}", flush=True)
 
     def close(self):
         self.producer.flush()

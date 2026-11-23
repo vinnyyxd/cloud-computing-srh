@@ -12,7 +12,7 @@ Everything is tied to logistics, the industry this programme is built around.
 
 ## The case you'll work on
 
-You are the data team at a company that sells freight analytics to shippers, the businesses moving goods by air and ocean. Your platform has two kinds of users:
+You are the data team at a company that sells freight analytics to shippers, the businesses moving goods by air and ocean. Your company builds one platform and sells it to many shippers. Its users come in two kinds:
 
 - **Operations teams** need to know where their shipments are right now, and which ones are delayed.
 - **Executives** want to know what they spent, which carriers are reliable, and where they can save money.
@@ -59,7 +59,7 @@ Session-by-session dates and materials are in the [README](README.md). Week 3 ha
 
 ## The project
 
-The project is individual: you each build your own platform in your own Google Cloud project. In session 3 you get one of seven shippers to serve, each with its own targets for data freshness, carrier reliability and monthly budget. Three of you share each shipper, but each of you builds and defends your own design, so no two platforms are exactly the same.
+The project is individual: you each build your own platform in your own Google Cloud project. In session 3 you each get a launch customer: one of seven shippers, your company's first big contract. Its targets for data freshness, carrier reliability and monthly budget are what your company promised, and your version of the platform has to meet them. Three of you share each launch customer, but each of you builds and defends your own design, so no two platforms are exactly the same.
 
 The project grows out of the workshops. Each session adds a layer. By the end of week 3 you have built both a Lambda and a Kappa version of your platform, and by the end of week 4 a deployed platform. Along the way, expect a few real-world surprises.
 
@@ -76,7 +76,7 @@ Everything goes in your fork of this repo, due **Tuesday 15 December**:
 
 ### The architecture board
 
-Each of you gets about 10 minutes: a live demo of your platform, your redesign pitch, and questions. Students present grouped by shipper, shippers 1 to 4 on 16 December and 5 to 7 on 18 December, so the three designs for each shipper come back to back. Your board is the other two students on your shipper, plus me. They already know the shipper, so no time goes on context: they ask the questions, and I do the scoring.
+Each of you gets about 10 minutes: a live demo of your platform, your redesign pitch, and questions. Students present grouped by launch customer, shippers 1 to 4 on 16 December and 5 to 7 on 18 December, so the three designs for each customer come back to back. Your board is the other two students with your launch customer, plus me. They already know the customer, so no time goes on context: they ask the questions, and I do the scoring.
 
 ## Assessment
 
@@ -98,7 +98,7 @@ You're encouraged to use AI tools; that's how the industry works now. The rule i
 
 You need two accounts before session 1. Both are free:
 
-- **Google Cloud:** follow [setup/gcp.md](setup/gcp.md). Most of you use the free trial on your own account: $300 of credit for 90 days. A card is needed to verify your identity, but you won't be charged unless you upgrade. If the sign-up fails, I'll host a project for you on the course account instead, with no card needed. Every workshop works on both.
+- **Google Cloud:** follow [setup/gcp.md](setup/gcp.md). Use the free trial on your own account: $300 of credit for 90 days. A card is needed to verify your identity, but you won't be charged unless you upgrade.
 - **Databricks Free Edition:** follow [setup/databricks.md](setup/databricks.md). No card needed.
 
 Some cloud services bill for every hour they run, even when you're not using them. **Every workshop ends with a teardown step. Do it every time**, or you'll burn through your credit.

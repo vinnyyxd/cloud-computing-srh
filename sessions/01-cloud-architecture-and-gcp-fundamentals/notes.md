@@ -45,7 +45,7 @@
 - How AI is changing the development life cycle comes later in the module.
 
 ### Workshop
-Sign up for Google Cloud, set a €50 budget alert, sign up for Databricks Free Edition, create a bucket with Terraform, and give your neighbour viewer access through IAM. The steps are in [workshop.md](workshop.md). If the free trial sign-up didn't work for you, see [setup/hosted-project.md](../../setup/hosted-project.md).
+Sign up for Google Cloud, set a €50 budget alert, sign up for Databricks Free Edition, create a bucket with Terraform, and give your neighbour viewer access through IAM. The steps are in [workshop.md](workshop.md).
 
 ## Questions from the room
 - **Will we cover MCP and AI agents?** They're not part of the core module, which is about data architectures and cloud computing. If there's time once the core topics are done, we'll cover the basics: MCP servers, how to connect to them, and how to build agents.

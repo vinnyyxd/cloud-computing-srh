@@ -9,6 +9,7 @@ MODE, ...), which is how you configure it in a container.
 
 import argparse
 import os
+import signal
 import time
 from datetime import date
 
@@ -69,6 +70,11 @@ def main(argv=None):
         counts = batch.generate(args.out, date.fromisoformat(args.start), args.days, args.seed)
         print(f"Wrote {args.days} days to {args.out}/: " + ", ".join(f"{v} {k}" for k, v in counts.items()))
         return
+
+    # Kubernetes and Docker stop a container with SIGTERM. As the container's
+    # first process, Python ignores it unless told otherwise, so the container
+    # would be killed only after the grace period. Stop as for Ctrl+C instead.
+    signal.signal(signal.SIGTERM, signal.default_int_handler)
 
     stream = EventStream(args.mode, args.seed, args.duplicates, args.late, args.schema)
     sink = make_sink(args)

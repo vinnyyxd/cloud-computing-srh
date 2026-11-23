@@ -1,0 +1,32 @@
+# Stretch: the generator's batch mode as a Job, which runs once to completion.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: generator-batch
+spec:
+  backoffLimit: 1
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: generator
+          image: europe-west3-docker.pkg.dev/PROJECT_ID/freight/generator:v1
+          args: ["batch", "--days", "7", "--out", "/data"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+      # emptyDir lives and dies with the pod: the files are gone when it finishes.
+      volumes:
+        - name: data
+          emptyDir: {}

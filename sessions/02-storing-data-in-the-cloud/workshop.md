@@ -1,6 +1,6 @@
 # Workshop: freight data into BigQuery
 
-**Time:** about 80 minutes, in Cloud Shell, in your own project. You need Monday's `<project-id>-raw` bucket. The steps are the same on your own account and on the course account.
+**Time:** about 80 minutes, in Cloud Shell, in your own project. You need Monday's `<project-id>-raw` bucket.
 
 ## 1. Generate a month of freight data
 
@@ -68,6 +68,8 @@ How many times fewer bytes does the partitioned table scan? Now try `SELECT *` i
 
 Write each query in the BigQuery console, and dry-run it before you run it.
 
+No rows back? Check the exact values in the column you're filtering on first, for example `SELECT DISTINCT mode FROM freight.rates`. Text matches are case-sensitive.
+
 1. **What did shippers spend per trade lane in October?** Use `bookings`. Highest first.
 2. **Which ocean carrier had the cheapest average spot rate for a 40HC on Asia-North Europe in October?** Use `rates`.
 3. **What share of each ocean carrier's sailings arrived no more than 24 hours late?** Use `schedules`. Hint: `DATETIME_DIFF(actual_arrival, planned_arrival, HOUR)`.
@@ -94,4 +96,5 @@ Nothing today bills by the hour, and this much data stays inside the free tier. 
 
 - **`Not found: Dataset`** in `load.sh`: run `terraform apply` first, and check `gcloud config get-value project` is your project.
 - **Location mismatch** when loading: the dataset and bucket must be in the same region. Both default to `europe-west3`.
-- **`Already Exists`** in Terraform: someone created the table by hand. Delete it in the console, or ask me about `terraform import`.
+- **`Already Exists`** in Terraform: someone created the table by hand, or Terraform lost its state because your Cloud Shell home folder was wiped. Delete it in the console, or ask me about `terraform import`.
+- **Repo folder gone, or Terraform needs reinstalling every session:** see the [Cloud Shell tips](../../setup/gcp.md#cloud-shell-tips).
