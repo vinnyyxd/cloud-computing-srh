@@ -9,7 +9,8 @@ variable "region" {
   default     = "europe-west3"
 }
 
-variable "neighbour_email" {
-  description = "The Google account email of the person next to you"
-  type        = string
+variable "neighbour_emails" {
+  description = "Google account emails of neighbours"
+  type        = list(string)
+  default     = []
 }

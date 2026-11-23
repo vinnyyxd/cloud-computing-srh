@@ -17,6 +17,6 @@ SELECT
 FROM freight.bookings AS b
 JOIN freight.schedules AS s
   ON s.schedule_id = b.schedule_id
-WHERE b.shipper_id = '_____'   -- your shipper ID, for example 'SHP00'
+WHERE b.shipper_id = 'SHP07'   -- your shipper ID, for example 'SHP00'
 GROUP BY b.mode, b.origin, b.destination, b.trade_lane
 ORDER BY on_time_pct;

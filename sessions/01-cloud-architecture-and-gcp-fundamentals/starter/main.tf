@@ -11,7 +11,16 @@ resource "google_storage_bucket" "raw" {
   # Lets `terraform destroy` remove the bucket even if it still holds files.
   # Fine for coursework; think twice before doing this in production.
   force_destroy = true
+  lifecycle_rule {
+    condition {
+      age = 30
+    }
 
+    action {
+      type          = "SetStorageClass"
+      storage_class = "NEARLINE"
+    }
+  }
   labels = {
     course  = "cloud-computing-srh"
     session = "01"
@@ -26,3 +35,10 @@ resource "google_storage_bucket" "raw" {
 #   role    = "roles/viewer"
 #   member  = "user:${var.neighbour_email}"
 # }
+resource "google_project_iam_member" "neighbour_viewer" {
+  for_each = toset(var.neighbour_emails)
+
+  project = var.project_id
+  role    = "roles/viewer"
+  member  = "user:${each.value}"
+}

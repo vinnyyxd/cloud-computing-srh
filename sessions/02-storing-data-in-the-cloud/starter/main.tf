@@ -93,3 +93,29 @@ resource "google_bigquery_table" "bookings" {
 # resource "google_bigquery_table" "schedules" {
 #   ...
 # }
+resource "google_bigquery_table" "schedules" {
+  dataset_id          = google_bigquery_dataset.freight.dataset_id
+  table_id            = "schedules"
+  deletion_protection = false
+
+  schema = jsonencode([
+    { name = "schedule_id", type = "STRING", mode = "REQUIRED" },
+    { name = "mode", type = "STRING" },
+    { name = "carrier_code", type = "STRING" },
+    { name = "origin", type = "STRING" },
+    { name = "destination", type = "STRING" },
+    { name = "trade_lane", type = "STRING" },
+    { name = "vessel_or_flight", type = "STRING" },
+    { name = "planned_departure", type = "DATETIME" },
+    { name = "planned_arrival", type = "DATETIME" },
+    { name = "actual_departure", type = "DATETIME" },
+    { name = "actual_arrival", type = "DATETIME" }
+  ])
+
+  time_partitioning {
+    type  = "DAY"
+    field = "planned_departure"
+  }
+
+  clustering = ["carrier_code"]
+}
