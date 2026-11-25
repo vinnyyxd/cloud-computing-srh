@@ -73,7 +73,7 @@ docker tag generator:v1 $REPO/generator:v1
 docker push $REPO/generator:v1
 ```
 
-Find the image in the console under **Artifact Registry → freight**. The registry is ready two or three minutes after `terraform apply` starts, once Terraform has switched on the APIs, so you don't have to wait for the cluster. If `docker push` fails with `failed to do request`, the registry isn't there yet: wait a minute and push again.
+Find the image in the console under **Artifact Registry → freight**. The registry is ready two or three minutes after `terraform apply` starts, once Terraform has switched on the APIs, so you don't have to wait for the cluster. If `docker push` fails with `failed to do request`, the registry isn't there yet, or Cloud Shell's connection dropped (`connection refused`): wait a minute and push again. A push has worked when it ends with a `digest:` line.
 
 ## 4. Connect to the cluster (5 min)
 

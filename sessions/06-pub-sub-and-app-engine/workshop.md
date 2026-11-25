@@ -50,7 +50,7 @@ Read `app/main.py`. It accepts one event per `POST /events`, checks the required
 
 **Your turn:** ocean events belong on Kafka, not here. Finish the `TODO` so that an event whose `mode` isn't `AIR` gets a `400` with a clear error.
 
-Then deploy it. The first deploy takes a few minutes:
+Then deploy it. The first deploy takes a few minutes, and sometimes fails with `an internal error has occurred`: run `gcloud app deploy --quiet` again.
 
 ```bash
 cd app
@@ -135,6 +135,8 @@ FROM freight.air_events_raw
 WHERE publish_time > TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 15 MINUTE);
 ```
 
+The 15 minutes may include some of step 4's events too, so the totals can be bigger than 200. What matters is the gap: `messages` minus `distinct_events` is the number of duplicates.
+
 Every duplicate got its own Pub/Sub message ID: Pub/Sub can't tell that two messages carry the same event. Only the `event_id` can. Pub/Sub can also redeliver a message of its own accord (at-least-once delivery), so whatever reads this stream must deduplicate on `event_id`. That's being idempotent, from session 3.
 
 ## 7. Replay with seek (5 min)
@@ -168,8 +170,17 @@ git push origin main
 
 ## Stretch
 
-- **Dead letters.** Pull one message *without* `--auto-ack`, and don't ack it. Pull again after the 20-second ack deadline, and again, five times in all. Then look in `air-events-dead-letter-debug`. Why would you want undeliverable messages kept somewhere, rather than retried for ever or thrown away?
-- **Two versions at once.** Change the webhook (for example, add a `received_at` timestamp to each event), and deploy it without moving traffic: `gcloud app deploy --no-promote --version v2 --quiet`. Then send 10% of traffic to it: `gcloud app services set-traffic default --splits <old-version>=0.9,v2=0.1`. Find the version names with `gcloud app versions list`. This is a canary release.
+- **Dead letters.** Start from an empty debug subscription with one new event in it. Seeking to now marks everything older as acked:
+
+  ```bash
+  gcloud pubsub subscriptions seek air-events-debug --time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+  curl -X POST $URL/events -H "Content-Type: application/json" \
+    -d '{"event_id":"dl-1","shipment_id":"DL-1","event_type":"BOOKED","mode":"AIR"}'
+  gcloud pubsub subscriptions pull air-events-debug --limit=1      # no --auto-ack
+  ```
+
+  Don't ack it. Wait for the 20-second ack deadline and pull again: it's the same message, and `DELIVERY_ATTEMPT` goes up by one. After the fifth delivery it stops coming back. Find it with `gcloud pubsub subscriptions pull air-events-dead-letter-debug --auto-ack`. Why would you want undeliverable messages kept somewhere, rather than retried for ever or thrown away?
+- **Two versions at once.** Change the webhook (for example, add a `received_at` timestamp to each event), and deploy it without moving traffic: `gcloud app deploy --no-promote --version v2 --quiet`. Then send 10% of traffic to it: `gcloud app services set-traffic default --splits <old-version>=0.9,v2=0.1 --split-by=random`. For `<old-version>`, run `gcloud app versions list` and take the one with `TRAFFIC_SPLIT` `1.00`; a failed deploy can leave extra versions in the list. Without `--split-by=random`, App Engine splits by IP address, and every request from your Cloud Shell goes to the same version. Send 50 events, and count in BigQuery how many have a `received_at`: about one in ten. This is a canary release.
 - **ADR 002.** Write `docs/adr/002-air-events-messaging.md`: Kafka or Pub/Sub for your launch customer's air events.
 
 ## Teardown
@@ -191,6 +202,8 @@ An empty list means zero nodes; gcloud may add a warning that the filter keys "w
 - **Terraform: `Service account service-...@gcp-sa-pubsub.iam.gserviceaccount.com does not exist`**: Google creates Pub/Sub's service agent a moment after the API is switched on. Wait a minute and run `terraform apply` again.
 - **Terraform: `Not found: Dataset ...:freight`**: you haven't got session 2's dataset. Run session 2's `terraform apply` first.
 - **`gcloud app deploy` fails on a build step with a permission error**: wait two minutes for the build permission to apply and try again. Terraform gives the build role to two accounts, `<number>-compute@developer.gserviceaccount.com` and `<project-id>@appspot.gserviceaccount.com`, because Google builds as one or the other depending on the project's age. If the error names any other account, tell me which.
+- **`gcloud app deploy` fails with `an internal error has occurred`**: run it again. It usually works the second time.
+- **Terraform: `Service account <number>-compute@developer.gserviceaccount.com does not exist`**: your project has never used Compute Engine, so Google hasn't created that account yet. Your session 4 cluster normally creates it. Run `gcloud services enable compute.googleapis.com`, wait two minutes, and run `terraform apply` again.
 - **The webhook returns `500` or `503`**: read its logs with `gcloud app logs tail -s default`. `PermissionDenied` means the publish permission hasn't applied yet; wait a minute.
 - **Nothing in `air_events_raw`**: open the `air-events-to-bigquery` subscription in the console and check its state. If it complains about the table, check the table's columns weren't changed.
 - **`pull` returns nothing**: the messages were already acked. Use `seek` (step 7), or send some more.

@@ -20,7 +20,7 @@ If `terraform version` prints installation instructions instead of a version, fo
 Monday's stdout generator isn't needed any more. Remove it to free its share of the node:
 
 ```bash
-kubectl delete -f k8s/generator.yaml
+kubectl delete -f k8s/generator.yaml --ignore-not-found
 ```
 
 ## 1. Rebuild the generator (5 min)
@@ -29,11 +29,14 @@ Today's material updates the generator's Kafka client, because Kafka 4 dropped s
 
 ```bash
 PROJECT_ID=$(gcloud config get-value project)
+echo $PROJECT_ID                               # your project ID: if it's empty, run gcloud config set project <your-project-id>
 REPO=europe-west3-docker.pkg.dev/$PROJECT_ID/freight
 cd ~/cloud-computing-srh/event-generator
 docker build -t $REPO/generator:v2 .
 docker push $REPO/generator:v2
 ```
+
+Check the push ended with a `digest:` line. From Cloud Shell, `docker push` sometimes fails with `failed to do request ... connect: connection refused`; run the same `docker push` again until it shows the digest.
 
 `v1` stays in the registry. Kubernetes runs whichever tag you ask for, which is why you never reuse a tag.
 
@@ -65,7 +68,9 @@ The three `PersistentVolumeClaims` are real disks in your project: find them und
 ## 4. Create the topic and look at it (10 min)
 
 ```bash
+PROJECT_ID=$(gcloud config get-value project)
 sed -i "s/PROJECT_ID/$PROJECT_ID/" kafka/producer.yaml
+grep image: kafka/producer.yaml               # should show your project ID, not PROJECT_ID or //
 kubectl apply -f kafka/topic-ocean-events.yaml -f kafka/client.yaml
 kubectl -n kafka wait pod/kafka-client --for=condition=Ready --timeout=120s
 ```
@@ -76,6 +81,8 @@ Set up two shortcuts for Kafka's command-line tools, which run inside the `kafka
 B=freight-kafka-bootstrap:9092
 kk() { kubectl -n kafka exec -i kafka-client -- /opt/kafka/bin/"$1" "${@:2}"; }
 ```
+
+They last only as long as the Cloud Shell tab. In a new tab, or after Cloud Shell reconnects, run these two lines again: `kk: command not found` means you haven't.
 
 Then describe the topic:
 
@@ -98,6 +105,8 @@ kubectl apply -f kafka/producer.yaml
 kubectl -n kafka get pods -l app=ocean-producer
 ```
 
+Wait until it says `Running`. `ImagePullBackOff` means `v2` isn't in your registry: go back to step 1 and push it again.
+
 Read the first events back, with their key, partition and offset:
 
 ```bash
@@ -106,7 +115,7 @@ kk kafka-console-consumer.sh --bootstrap-server $B --topic ocean-events \
   --property print.key=true --property print.partition=true --property print.offset=true
 ```
 
-Kafka 4.3 warns that `--property` is deprecated. It still works, so ignore the warning.
+Kafka 4.3 warns that `--property` is deprecated, and adds a notice about the new consumer rebalance protocol (KIP-848). Both still work as written, so ignore them. The same goes for `--producer-property` in the stretch.
 
 The key is the shipment ID. Pick one from the output and find all its events in the first 200:
 
@@ -130,7 +139,7 @@ kk kafka-console-consumer.sh --bootstrap-server $B --topic ocean-events \
 kk kafka-consumer-groups.sh --bootstrap-server $B --describe --group ops-dashboard
 ```
 
-For each partition: `CURRENT-OFFSET` is how far the group has read, `LOG-END-OFFSET` is the newest event, and `LAG` is the difference. Wait 30 seconds and describe it again: the producer keeps writing, nobody's reading, so the lag grows. Lag is the number to watch on any streaming system.
+The 50 may all come from one partition: a consumer reads in batches, a partition at a time. For each partition: `CURRENT-OFFSET` is how far the group has read, `LOG-END-OFFSET` is the newest event, and `LAG` is the difference. Wait 30 seconds and describe it again: the producer keeps writing, nobody's reading, so the lag grows. Lag is the number to watch on any streaming system.
 
 Now read as a second group, `exec-report`. It starts from the beginning on its own, and doesn't move `ops-dashboard`'s offsets:
 
@@ -149,7 +158,7 @@ kubectl -n kafka delete pod freight-dual-1
 kk kafka-topics.sh --bootstrap-server $B --describe --topic ocean-events
 ```
 
-Broker 1 has dropped out of the `Isr`, and any partition it led has a new leader. Is the producer still running?
+Broker 1 has dropped out of the `Isr`, and any partition it led has a new leader. It comes back within about 20 seconds, so run the `describe` straight after the `delete`, and copy its output for your checkpoint. If every `Isr` already shows three brokers, delete the pod again. Is the producer still running?
 
 ```bash
 kubectl -n kafka logs deployment/ocean-producer --tail=5    # the count keeps going up
@@ -169,12 +178,14 @@ kk kafka-consumer-groups.sh --bootstrap-server $B --group ops-dashboard \
 kk kafka-consumer-groups.sh --bootstrap-server $B --describe --group ops-dashboard
 ```
 
-The lag is now the whole topic. You can also rewind to a point in time, for example to just before a bug went live:
+The lag is now the whole topic. You can also rewind by time, for example to just before a bug went live. This moves the group back to where the log was 10 minutes ago:
 
 ```bash
 kk kafka-consumer-groups.sh --bootstrap-server $B --group ops-dashboard \
-  --topic ocean-events --reset-offsets --to-datetime 2026-11-25T17:00:00.000 --execute
+  --topic ocean-events --reset-offsets --by-duration PT10M --execute
 ```
+
+To rewind to a fixed moment, use `--to-datetime 2026-11-25T17:00:00.000` instead. Kafka reads that time as UTC, an hour behind Hamburg in winter, and a time after the newest event puts the group at the end of the log.
 
 This is the move Kappa depends on: fix your processing code, then rebuild its output by replaying the log. In session 8 you do exactly that.
 
@@ -218,14 +229,26 @@ cd ~/cloud-computing-srh/sessions/04-docker-and-kubernetes-on-gke/starter
 terraform apply -var node_count=0
 ```
 
-Don't delete the cluster, the `kafka` namespace or the PersistentVolumeClaims: session 7 reads this topic, and session 8 replays it. Next time, `terraform apply` brings everything back with its data, and the producer carries on where it stopped. The brokers take a few minutes to come up.
+Don't delete the cluster, the `kafka` namespace or the PersistentVolumeClaims: session 7 reads this topic, and session 8 replays it. Next time, `terraform apply` brings everything back with its data, and the producer carries on where it stopped. Allow about 10 minutes before Kafka is usable again. Watch it with `kubectl -n kafka get pods --watch`:
+
+- In the first minute the node is back, and the operator, the topic operator and the producer start.
+- For the next five minutes or so, the three `freight-dual` brokers aren't there yet, so the topic operator and the producer can't reach Kafka. They go between `Running`, `Error` and `CrashLoopBackOff`. That's normal: leave them.
+- After about six minutes the operator recreates the three brokers, on their old disks, and the topic operator settles.
+- The producer comes back last, because Kubernetes waits longer after each crash. To skip the wait, run `kubectl -n kafka delete pod -l app=ocean-producer` once the brokers show `1/1 Running`.
+
+Don't rely on `kubectl wait kafka/freight`: it still remembers being Ready from before, and returns at once.
+
+The `kafka-client` pod doesn't come back on its own: it's a plain pod, not a Deployment. To use `kk` again, for example to finish `docs/kafka.md` at home, run `kubectl apply -f kafka/client.yaml` in `sessions/05-kafka-on-gke/starter`.
 
 ## If something goes wrong
 
 - **`freight-dual` pods stuck in `Pending`**: `kubectl -n kafka describe pod freight-dual-0` says why. `Insufficient cpu` or `Insufficient memory` means something else is using the node: check `kubectl get pods --all-namespaces` and delete Monday's generator if it's still there. No nodes at all means you skipped step 0.
 - **`kubectl wait` times out**: read the operator's log, `kubectl -n kafka logs deployment/strimzi-cluster-operator --tail=50`. Most problems show up there.
+- **`grep image:` shows `//freight`, or the producer is in `InvalidImageName`**: `$PROJECT_ID` was empty when you ran `sed`. Run `git checkout kafka/producer.yaml`, set `PROJECT_ID` as in step 4, and run the `sed` again.
+- **The producer is in `ImagePullBackOff`**: `generator:v2` isn't in your registry, usually because `docker push` failed. Push it again (step 1), then `kubectl -n kafka delete pod -l app=ocean-producer` so it pulls straight away.
 - **The producer is in `CrashLoopBackOff`**: check you're running `generator:v2`, not `v1`. `kubectl -n kafka logs deployment/ocean-producer` shows the error.
+- **A consumer in step 5 never finishes**: nothing is being written. Check the producer is `Running`.
 - **A consumer with `--group` shows nothing**: that group has already read everything. `--from-beginning` only applies to a group that's never read before. Use a new group name, or reset its offsets.
 - **`--reset-offsets` says the group is active**: a consumer in that group is still running. Stop it, wait 30 seconds, and try again.
-- **`error: unable to upgrade connection`** from `kk`: the `kafka-client` pod isn't ready yet, or was deleted. Run `kubectl apply -f kafka/client.yaml` again.
-- **After scaling up, the producer restarts a few times**: it starts before Kafka is ready. It settles once the brokers are up.
+- **`error: unable to upgrade connection`** or **`pods "kafka-client" not found`** from `kk`: the `kafka-client` pod isn't ready yet, or is gone after scaling to zero. Run `kubectl apply -f kafka/client.yaml` again.
+- **After scaling up, the producer and the topic operator keep restarting**: they start before the brokers, which take about six minutes to come back. Wait until the three `freight-dual` pods show `1/1 Running`, then `kubectl -n kafka delete pod -l app=ocean-producer` to restart the producer straight away. If there are still no `freight-dual` pods after 10 minutes, read the operator's log: `kubectl -n kafka logs deployment/strimzi-cluster-operator --tail=50`.
